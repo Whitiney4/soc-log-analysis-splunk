@@ -1,5 +1,17 @@
 # Detection Use Cases
 
+This document summarises the main detection use cases developed in this Splunk SOC log analysis project.
+
+The project uses three simulated log sources:
+
+* `auth_logs.csv`
+* `firewall_logs.csv`
+* `web_access_logs.csv`
+
+The detection use cases focus on authentication attacks, network reconnaissance, unusual outbound traffic and suspicious web access patterns.
+
+---
+
 ## Detection Use Case 1: Multiple Failed Login Attempts from One IP
 
 ### Purpose
@@ -58,7 +70,7 @@ The source IP address `203.0.113.50` had 18 failed login attempts and 1 successf
 
 ### Recommended Response
 
-The security team should reset the admin account password, revoke active sessions, review VPN login records, and enable multi-factor authentication for privileged accounts.
+The security team should reset the `admin` account password, revoke active sessions, review VPN login records, and enable multi-factor authentication for privileged accounts.
 
 ### Screenshot
 
@@ -164,3 +176,19 @@ The security team should review web server logs, block or monitor the source IP 
 ### Screenshot
 
 ![Suspicious web access pattern](screenshots/suspicious-web-access-pattern.png)
+
+---
+
+## Dashboard Screenshots
+
+The Splunk dashboard contains the main detection panels created during the project.
+
+![Dashboard overview 1](screenshots/dashboard-overview1.png)
+
+![Dashboard overview 2](screenshots/dashboard-overview2.png)
+
+---
+
+## Summary
+
+This project demonstrates a basic SOC investigation workflow using Splunk. The detection logic covers authentication attacks, port scanning, unusual outbound network traffic and suspicious web access attempts. The findings were also mapped to selected MITRE ATT&CK techniques and summarised in a simple incident report.
