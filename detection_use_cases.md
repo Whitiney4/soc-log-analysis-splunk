@@ -40,7 +40,7 @@ The security team should review the source IP address, check whether any login a
 
 ### Screenshot
 
-![multiple failed login attempts](screenshots/brute-force-filed-logins.png)
+![Multiple failed login attempts](screenshots/failed-logins.png)
 
 ---
 
