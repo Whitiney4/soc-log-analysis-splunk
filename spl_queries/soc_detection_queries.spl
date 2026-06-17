@@ -1,0 +1,65 @@
+# SOC Log Analysis Project — SPL Query Library
+# Replace index=soc_lab if you used a different index name.
+
+## 1. Confirm that data was imported
+index=soc_lab
+| stats count by sourcetype
+
+## 2. Failed VPN logins by source IP
+index=soc_lab sourcetype=auth_logs result=failure
+| stats count as failed_attempts values(username) as targeted_users by src_ip
+| sort - failed_attempts
+
+## 3. Brute-force detection: five or more failed logins from one IP
+index=soc_lab sourcetype=auth_logs result=failure
+| stats count as failed_attempts values(username) as targeted_users earliest(_time) as first_seen latest(_time) as last_seen by src_ip
+| where failed_attempts >= 5
+| convert ctime(first_seen) ctime(last_seen)
+| sort - failed_attempts
+
+## 4. Successful login after repeated failures
+index=soc_lab sourcetype=auth_logs
+| stats count(eval(result="failure")) as failures count(eval(result="success")) as successes values(username) as users by src_ip
+| where failures >= 5 AND successes >= 1
+| sort - failures
+
+## 5. Blocked destination ports by source IP
+index=soc_lab sourcetype=firewall_logs action=blocked
+| stats dc(dest_port) as unique_ports values(dest_port) as ports count as attempts by src_ip dest_ip
+| sort - unique_ports
+
+## 6. Port-scan detection
+index=soc_lab sourcetype=firewall_logs action=blocked
+| stats dc(dest_port) as unique_ports values(dest_port) as scanned_ports count as attempts by src_ip dest_ip
+| where unique_ports >= 10
+| sort - unique_ports
+
+## 7. Unusual outbound traffic
+index=soc_lab sourcetype=firewall_logs action=allowed
+| stats sum(bytes_out) as total_bytes values(dest_port) as ports by src_ip dest_ip
+| where total_bytes > 500000
+| eval total_MB=round(total_bytes/1024/1024,2)
+| sort - total_bytes
+
+## 8. Suspicious web requests
+index=soc_lab sourcetype=web_access_logs
+| search uri_path="*../*" OR uri_path="*.env*" OR uri_path="*UNION SELECT*" OR uri_path="*OR '1'='1*" OR uri_path="*/admin*" OR uri_path="*/wp-login.php*"
+| table _time src_ip method uri_path status
+
+## 9. Event timeline for the compromised admin account
+index=soc_lab (sourcetype=auth_logs username=admin) OR (sourcetype=firewall_logs src_ip=203.0.113.50)
+| table _time sourcetype src_ip username result dest_ip dest_port action category reason
+| sort _time
+
+## 10. Dashboard panel: failed logins over time
+index=soc_lab sourcetype=auth_logs result=failure
+| timechart span=15m count as failed_logins
+
+## 11. Dashboard panel: top suspicious source IPs
+index=soc_lab
+| stats count by src_ip sourcetype
+| sort - count
+
+## 12. Dashboard panel: firewall actions
+index=soc_lab sourcetype=firewall_logs
+| chart count over action by protocol
